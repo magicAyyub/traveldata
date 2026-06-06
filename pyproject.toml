@@ -1,0 +1,38 @@
+[project]
+name = "traveldata"
+version = "0.1.0"
+description = "Free, open-data-first travel POI data layer (POI + destination content for discovery, ranking, and agentic workflows)."
+requires-python = ">=3.11"
+dependencies = [
+    "sqlalchemy>=2.0",
+    "geoalchemy2>=0.15",
+    "pydantic>=2.6",
+    "pydantic-settings>=2.2",
+    "httpx>=0.27",
+    "typer>=0.12",
+    "tenacity>=8.2",
+    "alembic>=1.13",
+    "psycopg[binary]>=3.1",
+]
+
+[project.optional-dependencies]
+# Pulled in as later slices land (resolution, wikivoyage dumps, embeddings).
+resolve = [
+    "rapidfuzz>=3.6",
+    "pygeohash>=1.2",
+]
+wikivoyage = ["mwparserfromhell>=0.6"]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+traveldata = "traveldata.pipeline.cli:app"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["traveldata*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

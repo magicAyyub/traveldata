@@ -1,0 +1,15 @@
+{
+  "type": "node",
+  "id": 98765,
+  "lat": 48.8606,
+  "lon": 2.3376,
+  "tags": {
+    "name": "Musée de la Chasse et de la Nature",
+    "name:en": "Museum of Hunting and Nature",
+    "tourism": "museum",
+    "wikidata": "Q3330187",
+    "description": "An idiosyncratic museum blending taxidermy with contemporary art.",
+    "wheelchair": "yes",
+    "opening_hours": "Tu-Su 11:00-18:00"
+  }
+}

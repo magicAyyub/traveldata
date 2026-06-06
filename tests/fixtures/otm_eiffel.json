@@ -1,0 +1,26 @@
+{
+  "xid": "W12345",
+  "name": "Eiffel Tower",
+  "address": {
+    "city": "Paris",
+    "country": "France",
+    "country_code": "fr",
+    "road": "5 Avenue Anatole France"
+  },
+  "rate": "7h",
+  "wikidata": "Q243",
+  "kinds": "towers,architecture,interesting_places,view_points,historic",
+  "wikipedia": "https://en.wikipedia.org/wiki/Eiffel_Tower",
+  "image": "https://upload.wikimedia.org/eiffel.jpg",
+  "preview": {
+    "source": "https://upload.wikimedia.org/eiffel_thumb.jpg",
+    "height": 480,
+    "width": 640
+  },
+  "wikipedia_extracts": {
+    "title": "Eiffel Tower",
+    "text": "The Eiffel Tower is a wrought-iron lattice tower on the Champ de Mars in Paris."
+  },
+  "point": {"lon": 2.2945, "lat": 48.8584},
+  "otm": "https://opentripmap.com/en/card/W12345"
+}
