@@ -152,6 +152,29 @@ def wikidata_to_drafts(payload: dict, lang: str = "en") -> list[CanonicalPoiDraf
         source_url=f"https://www.wikidata.org/wiki/{qid}",
     )]
 
+WIKIVOYAGE_LICENSE = "CC BY-SA (Wikivoyage)"
+
+
+def wikivoyage_listing_to_draft(payload: dict, lang: str = "en") -> list[CanonicalPoiDraft]:
+    name = (payload.get("name") or "").strip()
+    lat, lon = payload.get("lat"), payload.get("lon")
+    if not name or lat is None or lon is None:
+        return []
+    kind = payload.get("kind", "see")
+    content = payload.get("content")
+    return [CanonicalPoiDraft(
+        source="wikivoyage", source_id=payload.get("source_id") or name,
+        canonical_name=name, lat=float(lat), lon=float(lon), names={lang: name},
+        wikidata_qid=payload.get("wikidata"),
+        categories=taxonomy.map_wikivoyage_kind(kind), raw_kinds=[f"wikivoyage:{kind}"],
+        short_description=(content[:280] if content else None),
+        descriptions={lang: content} if content else {},
+        images=[],
+        source_xids={"wikidata": payload["wikidata"]} if payload.get("wikidata") else {},
+        license=WIKIVOYAGE_LICENSE, source_url=payload.get("page_url"),
+    )]
+
+
 def record_to_drafts(source: str, payload: dict, lang: str | None = "en") -> list[CanonicalPoiDraft]:
     if source == "opentripmap":
         return opentripmap_to_drafts(payload, lang or "en")
@@ -159,4 +182,6 @@ def record_to_drafts(source: str, payload: dict, lang: str | None = "en") -> lis
         return overpass_to_drafts(payload, lang or "en")
     if source == "wikidata":
         return wikidata_to_drafts(payload, lang or "en")
+    if source == "wikivoyage":
+        return wikivoyage_listing_to_draft(payload, lang or "en")
     raise ValueError(f"no mapper for source '{source}'")

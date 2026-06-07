@@ -7,11 +7,11 @@
 ![Data](https://img.shields.io/badge/data-open--data--first-success)
 
 A free, open-data-first travel **POI data layer**. It ingests points of interest from
-multiple open sources (OpenStreetMap, OpenTripMap, Wikidata, Wikivoyage, Wikipedia
-pageviews), resolves duplicates across them into single provenance-tracked records,
-enriches them, and scores them for discovery (**hidden gems**, **good activities**,
-**popularity**) behind a spatial HTTP API at both **POI** and **place** levels. Not a
-booking system; the data foundation for recommendation, ranking, and agentic workflows.
+multiple open sources (OpenStreetMap, OpenTripMap, Wikidata, Wikipedia pageviews),
+resolves duplicates across them into single provenance-tracked records, enriches them,
+and scores them for discovery (**hidden gems**, **good activities**, **popularity**)
+behind a spatial HTTP API. Not a booking system; the data foundation for recommendation,
+ranking, and agentic workflows.
 
 ## Why
 
@@ -38,13 +38,11 @@ TRAVELDATA_USER_AGENT=traveldata/0.1 (you@example.com)
 ENV
 
 uv sync
-uv pip install -e ".[dev,serve,wikivoyage]"
 uv run alembic upgrade head
 
-# build a destination: POIs (geo) + the Wikivoyage place layer (page)
+# build a city, then resolve + enrich
 uv run traveldata ingest --source osm         --lat 48.8606 --lon 2.3376 --radius-m 1500
 uv run traveldata ingest --source opentripmap --lat 48.8606 --lon 2.3376 --radius-m 1500
-uv run traveldata ingest-place --title "Paris/1st arrondissement" --level district
 uv run traveldata pipeline        # resolve then enrich
 
 uv run traveldata serve --reload  # http://127.0.0.1:8000/docs
@@ -53,16 +51,12 @@ uv run traveldata serve --reload  # http://127.0.0.1:8000/docs
 ```bash
 # top hidden gems near the Louvre, destinations only
 curl "http://127.0.0.1:8000/pois/nearby?lat=48.8606&lon=2.3376&radius_m=1500&sort=hidden_gem_score&limit=10"
-
-# a destination's prose + its highlights
-curl "http://127.0.0.1:8000/places"
-curl "http://127.0.0.1:8000/places/<id>/highlights?sort=activity_score&limit=10"
 ```
 
 ## CLI
 
 ```
-traveldata sources | ingest | ingest-place | stats | resolve | enrich | pipeline | top | serve
+traveldata sources | ingest | stats | resolve | enrich | pipeline | top | serve
 ```
 
 `pipeline` runs `resolve` then `enrich`, which is the order to use after any new ingest.
@@ -80,7 +74,5 @@ deliberately **not** scraped. Attribution is surfaced on every API response.
 
 ## Status
 
-Four-source POI + place layer (OSM + OpenTripMap + Wikidata + Wikivoyage), resolved,
-enriched, scored, and served spatially at POI and place levels, completing the data foundation.
-Optional next steps: a recommender (embeddings/pgvector + LTR), scale (bbox tiling / Wikivoyage dumps),
-or the agentic layer.
+Working three-source POI layer (OSM + OpenTripMap + Wikidata) with spatial serving.
+Next: the **Wikivoyage layer** (destination/`place` data, practical info, "Do" content).

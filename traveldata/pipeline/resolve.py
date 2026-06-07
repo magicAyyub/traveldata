@@ -78,6 +78,8 @@ def run_resolve(rebuild: bool = False, max_distance_m: int = 80,
             session.add(PoiLink(poi_id=poi.id, source_record_id=rec.id,
                                 match_method=method, match_score=score))
             rec.poi_id = poi.id
+            if rec.place_id and poi.place_id is None:
+                poi.place_id = rec.place_id
             reconflate_and_score(session, poi)
 
             if stats["records"] % batch_commit == 0:

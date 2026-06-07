@@ -32,3 +32,14 @@ class PoiOut(BaseModel):
 
 class PoiDetailOut(PoiOut):
     descriptions: dict[str, str] = {}
+
+class PlaceOut(BaseModel):
+    id: str
+    canonical_name: str
+    level: str
+    names: dict[str, str] = {}
+    lat: float | None = None
+    lon: float | None = None
+    descriptions: dict[str, str] = {}
+    practical_info: dict = {}
+    wikivoyage_title: str | None = None

@@ -10,10 +10,11 @@ except ImportError:
 def create_app():
     if FastAPI is None:
         raise RuntimeError("Install serving deps: uv pip install -e '.[serve]'")
-    from .routers import pois
+    from .routers import places, pois
 
     app = FastAPI(title="traveldata", version="0.1.0")
     app.include_router(pois.router)
+    app.include_router(places.router)
 
     @app.get("/health")
     def health() -> dict:

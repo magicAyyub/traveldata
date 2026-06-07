@@ -143,3 +143,8 @@ NON_DESTINATION_INSTANCES = {
 
 def non_destination_instance(qids: list[str]) -> bool:
     return any(q in NON_DESTINATION_INSTANCES for q in qids)
+
+_WV_KIND_CATEGORY = {"see": "other", "do": "other", "eat": "food", "drink": "nightlife", "buy": "market"}
+
+def map_wikivoyage_kind(kind: str) -> list[str]:
+    return [_WV_KIND_CATEGORY.get(kind, "other")]

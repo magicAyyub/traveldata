@@ -140,6 +140,16 @@ def serve(host: str = typer.Option("127.0.0.1"), port: int = typer.Option(8000),
     import uvicorn
     uvicorn.run("traveldata.api.main:app", host=host, port=port, reload=reload)
 
+@app.command("ingest-place")
+def ingest_place(
+    title: str = typer.Option(..., help="exact Wikivoyage page title, e.g. 'Paris/1st arrondissement'"),
+    lang: str = typer.Option("en"),
+    level: str = typer.Option("city", help="country|region|city|district"),
+) -> None:
+    """Ingest a Wikivoyage destination page (place + listings)."""
+    from .places import run_ingest_place
+    s = run_ingest_place(title, lang=lang, level=level)
+    typer.echo(f"place={s['title']} id={s['place_id']} listings={s['listings']}")
 
 @app.command()
 def pipeline(

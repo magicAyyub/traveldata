@@ -65,14 +65,23 @@ def reconflate_and_score(session, poi: Poi) -> None:
             poi.enriched_at = func.now()
 
     has_practical = False
+    in_wv_do = False
+    osm_sport = False
     for r in linked:
         if r.source == "osm":
             tags = r.payload.get("tags") or {}
             if any(k in tags for k in ("opening_hours", "website", "contact:website", "phone", "fee")):
                 has_practical = True
+            if tags.get("leisure") or tags.get("sport"):
+                osm_sport = True
         elif r.source == "opentripmap":
             if r.payload.get("address") or r.payload.get("url"):
                 has_practical = True
+        elif r.source == "wikivoyage":
+            if any(r.payload.get(k) for k in ("hours", "price", "address", "phone")):
+                has_practical = True
+            if r.payload.get("kind") == "do":
+                in_wv_do = True
 
     wd_instances = (wd_payload or {}).get("instance_of") or []
     is_dest = taxonomy.is_destination(c.categories, wd_instances)
@@ -89,5 +98,7 @@ def reconflate_and_score(session, poi: Poi) -> None:
         sitelink_count=poi.sitelink_count, pageviews_30d=poi.pageviews_30d,
         is_destination=is_dest,
         has_practical_info=has_practical,
+        in_wikivoyage_do=in_wv_do,
+        osm_leisure_sport=osm_sport,
     ))
     upsert_score(session, poi.id, s)
