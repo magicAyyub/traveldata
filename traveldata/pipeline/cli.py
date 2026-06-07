@@ -140,5 +140,21 @@ def serve(host: str = typer.Option("127.0.0.1"), port: int = typer.Option(8000),
     import uvicorn
     uvicorn.run("traveldata.api.main:app", host=host, port=port, reload=reload)
 
+
+@app.command()
+def pipeline(
+    rebuild: bool = typer.Option(False, help="resolve --rebuild before enriching"),
+    refresh: bool = typer.Option(False, help="re-fetch Wikidata for already-enriched POIs"),
+    pageviews: bool = typer.Option(True, "--pageviews/--no-pageviews"),
+) -> None:
+    """resolve then enrich — keeps scores/flags consistent after an ingest."""
+    from .resolve import run_resolve
+    from .enrich import run_enrich
+    r = run_resolve(rebuild=rebuild)
+    typer.echo(f"resolve: records={r['records']} matched={r['matched']} created={r['created']}")
+    e = run_enrich(with_pageviews=pageviews, refresh=refresh)
+    typer.echo(f"enrich: pois={e['pois']} wikidata_hits={e['wikidata_hits']} pageviews={e['pageviews']}")
+
+
 if __name__ == "__main__":
     app()

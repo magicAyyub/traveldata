@@ -29,7 +29,7 @@ class RichnessInputs:
 def content_richness(i: RichnessInputs) -> float:
     return _clamp(
         0.20 * (1.0 if i.has_description else 0.0)
-        + 0.20 * _clamp(i.description_len / 600.0)
+        + 0.20 * _clamp(i.description_len / 1500.0)
         + 0.15 * _clamp(i.image_count / 3.0)
         + 0.20 * _clamp(i.source_count / 4.0)
         + 0.15 * (1.0 if i.has_practical_info else 0.0)

@@ -64,16 +64,30 @@ def reconflate_and_score(session, poi: Poi) -> None:
         if "sitelinks" in wd_payload:  # new-style enriched payload
             poi.enriched_at = func.now()
 
+    has_practical = False
+    for r in linked:
+        if r.source == "osm":
+            tags = r.payload.get("tags") or {}
+            if any(k in tags for k in ("opening_hours", "website", "contact:website", "phone", "fee")):
+                has_practical = True
+        elif r.source == "opentripmap":
+            if r.payload.get("address") or r.payload.get("url"):
+                has_practical = True
+
     wd_instances = (wd_payload or {}).get("instance_of") or []
-    is_dest = taxonomy.is_destination(c.categories) and not taxonomy.non_destination_instance(wd_instances)
+    is_dest = taxonomy.is_destination(c.categories, wd_instances)
     poi.is_destination = is_dest
+
+    desc_len = max((len(v) for v in (c.descriptions or {}).values()),
+                   default=len(c.short_description or ""))
 
     s = scorer.score(scorer.PoiFeatures(
         categories=c.categories, has_coordinates=True,
-        description_len=len(c.short_description or ""), image_count=len(c.images),
+        description_len=desc_len, image_count=len(c.images),
         source_count=len(c.sources), lang_count=len(c.names),
         otm_rate=c.importance_raw, osm_present="osm" in c.sources,
         sitelink_count=poi.sitelink_count, pageviews_30d=poi.pageviews_30d,
         is_destination=is_dest,
+        has_practical_info=has_practical,
     ))
     upsert_score(session, poi.id, s)

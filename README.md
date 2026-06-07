@@ -1,50 +1,78 @@
 # traveldata
 
-Free, open-data-first travel POI data layer. Multi-source ingestion → canonical
-POI/destination store → ranking (hidden-gem / activity) → FastAPI serving.
+![Python](https://img.shields.io/badge/python-3.11%2B-blue)
+![Postgres](https://img.shields.io/badge/postgres-16%20%2B%20PostGIS-336791)
+![API](https://img.shields.io/badge/api-FastAPI-009688)
+![Tests](https://img.shields.io/badge/tests-pytest-0A9EDC)
+![Data](https://img.shields.io/badge/data-open--data--first-success)
 
-## What's built in this slice
+A free, open-data-first travel **POI data layer**. It ingests points of interest from
+multiple open sources (OpenStreetMap, OpenTripMap, Wikidata, Wikipedia pageviews),
+resolves duplicates across them into single provenance-tracked records, enriches them,
+and scores them for discovery (**hidden gems**, **good activities**, **popularity**)
+behind a spatial HTTP API. Not a booking system; the data foundation for recommendation,
+ranking, and agentic workflows.
 
-End-to-end **fetch → map → score** spine, proven by unit tests, plus the schema.
+## Why
 
-- `connectors/` — `Connector` ABC + two interchangeable sources: **OpenTripMap**
-  (primary) and **OSM/Overpass** (fallback). I/O is isolated; mapping is pure.
-- `normalize/` — `taxonomy.py` (one category vocabulary for every source) and
-  `mappers.py` (source payload → `CanonicalPoiDraft`, fully unit-tested).
-- `score/` — interpretable signals (`content_richness`, `popularity`,
-  `activity_score`, `hidden_gem_score`) → versioned `PoiScoreResult`.
-- `db/models.py` — SQLAlchemy 2.0 ORM matching the normalized schema (PostGIS).
-- `raw/store.py` — idempotent landing into `source_record` (content-hash skip).
-- `pipeline/cli.py` — `traveldata ingest|sources|...` (ingest is a live dry-run).
-- `api/main.py` — FastAPI surface (health now; spatial endpoints next slice).
+- **Open-data-first**: no paid APIs in the core path.
+- **Multi-source by design**: never depends on one provider; sources merge on the
+  Wikidata QID, then fall back to spatial + name matching.
+- **Provenance everywhere**: every record keeps its source, license, and which source
+  won each field; API responses carry attributions.
+- **Built for ranking**: interpretable, versioned scores with raw signals stored for a
+  future learning-to-rank model.
 
-## Run
+## Quickstart
 
 ```bash
-python -m venv .venv && . .venv/bin/activate
-pip install -e ".[dev]"
-pytest -q                      # 17 passing
-traveldata sources             # list connectors
+# PostGIS (dev): swap DATABASE_URL for Neon/RDS in prod, same migrations
+docker run -d --name traveldata \
+  -e POSTGRES_PASSWORD=traveldata -e POSTGRES_DB=traveldata \
+  -p 5433:5432 postgis/postgis:16-3.4
 
-# Live dry-run (needs network to api.opentripmap.com + a key in TRAVELDATA_OPENTRIPMAP_API_KEY)
-traveldata ingest --source osm --lat 48.8606 --lon 2.3376 --radius-m 1500
+cat >> .env <<'ENV'
+TRAVELDATA_DATABASE_URL=postgresql+psycopg://postgres:traveldata@localhost:5433/traveldata
+TRAVELDATA_OPENTRIPMAP_API_KEY=your_key_here
+TRAVELDATA_USER_AGENT=traveldata/0.1 (you@example.com)
+ENV
+
+uv sync
+uv run alembic upgrade head
+
+# build a city, then resolve + enrich
+uv run traveldata ingest --source osm         --lat 48.8606 --lon 2.3376 --radius-m 1500
+uv run traveldata ingest --source opentripmap --lat 48.8606 --lon 2.3376 --radius-m 1500
+uv run traveldata pipeline        # resolve then enrich
+
+uv run traveldata serve --reload  # http://127.0.0.1:8000/docs
 ```
 
-Config via env (prefix `TRAVELDATA_`) — see `.env.example`.
+```bash
+# top hidden gems near the Louvre, destinations only
+curl "http://127.0.0.1:8000/pois/nearby?lat=48.8606&lon=2.3376&radius_m=1500&sort=hidden_gem_score&limit=10"
+```
 
-## Not yet built (next slices, in order)
+## CLI
 
-1. **Persistence**: Alembic migration + PostGIS DDL; wire `ingest` to `land_raw`.
-2. **Entity resolution** (`resolve/`): QID exact-match → geohash+name blocking →
-   conflation with `field_provenance`. (`pip install -e ".[resolve]"`)
-3. **Wikivoyage connector** (`.[wikivoyage]`): dump parse + listing extraction for
-   destination context and the `Do` sections that drive `activity_score`.
-4. **Enrichment**: Wikidata SPARQL, Wikipedia extracts, pageviews, embeddings (pgvector).
-5. **Serving**: PostGIS `ST_DWithin` nearby, highlights, search.
+```
+traveldata sources | ingest | stats | resolve | enrich | pipeline | top | serve
+```
 
-## Licensing / provenance
+`pipeline` runs `resolve` then `enrich`, which is the order to use after any new ingest.
 
-Every `source_record` carries `license` + `source_url`. OSM = ODbL (attribution +
-share-alike); OpenTripMap aggregates OSM/Wikidata/Wikipedia (inherit those). Wikidata
-= CC0. Wikivoyage/Wikipedia = CC BY-SA. **Atlas Obscura is intentionally excluded from
-automated ingestion** (proprietary, ToS bars scraping) — use a curated name seed only.
+## Documentation
+
+Full design (architecture diagrams, schema, resolution/conflation, the scoring model,
+API reference, and tuning knobs) lives in **[docs/architecture.md](docs/architecture.md)**.
+
+## Licensing
+
+Code under your chosen license. Data inherits its sources: OSM **ODbL**, Wikidata
+**CC0**, Wikipedia/Wikivoyage **CC BY-SA**, OpenTripMap aggregated. Atlas Obscura is
+deliberately **not** scraped. Attribution is surfaced on every API response.
+
+## Status
+
+Working three-source POI layer (OSM + OpenTripMap + Wikidata) with spatial serving.
+Next: the **Wikivoyage layer** (destination/`place` data, practical info, "Do" content).

@@ -115,9 +115,13 @@ def activity_prior(categories: list[str]) -> float:
 NON_DESTINATION = {"public_art"}
 
 
-def is_destination(categories: list[str]) -> bool:
-    """A standalone place worth routing someone to (not a single artwork/sub-item)."""
-    return any(c not in NON_DESTINATION for c in categories) if categories else False
+def is_destination(categories: list[str], instance_of: list[str] | None = None) -> bool:
+    cats = categories or []
+    if "public_art" in cats:                       # OSM tagged it a discrete artwork
+        return False
+    if instance_of and non_destination_instance(instance_of):  # Wikidata P31 artwork type
+        return False
+    return any(c not in NON_DESTINATION for c in cats)
 
 
 # Wikidata P31 (instance-of) QIDs that are artworks/commemoratives, not places.
@@ -133,6 +137,7 @@ NON_DESTINATION_INSTANCES = {
     "Q5003624",   # memorial
     "Q575759",    # war memorial
     "Q721747",    # commemorative plaque
+    "Q3476533",
 }
 
 

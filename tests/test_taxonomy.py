@@ -32,6 +32,7 @@ def test_public_art_is_not_a_destination():
     assert taxonomy.map_osm_tags({"tourism": "artwork", "artwork_type": "statue"}) == ["public_art"]
     assert taxonomy.map_osm_tags({"tourism": "gallery"}) == ["art"]
     assert taxonomy.is_destination(["public_art"]) is False
-    assert taxonomy.is_destination(["public_art", "historic"]) is True
+    assert taxonomy.is_destination(["public_art", "historic"]) is False
+    assert taxonomy.is_destination(["museum"], ["Q179700"]) is False   # P31 statue via param
     assert taxonomy.is_destination(["museum"]) is True
     assert taxonomy.is_destination([]) is False
