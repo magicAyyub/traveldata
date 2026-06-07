@@ -373,9 +373,9 @@ hidden_gem = (is_destination AND quality_floor)
 
 ```mermaid
 flowchart TD
-    A[POI] --> B{public_art in categories?\n(OSM tourism=artwork)}
+    A[POI] --> B{"public_art in categories?\n(OSM tourism=artwork)"}
     B -->|yes| X[NOT a destination]
-    B -->|no| C{Wikidata P31 in\nNON_DESTINATION_INSTANCES?\n(sculpture, statue, bust, monument, ...)}
+    B -->|no| C{"Wikidata P31 in\nNON_DESTINATION_INSTANCES?\n(sculpture, statue, bust, monument, ...)"}
     C -->|yes| X
     C -->|no| D{has any real category?}
     D -->|yes| Y[destination]
