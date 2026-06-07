@@ -241,7 +241,7 @@ sequenceDiagram
 
     CLI->>SRC: ingest (OSM/OTM) or ingest-place (Wikivoyage)
     SRC->>DB: land_raw(RawDoc)   [content-hash skip if unchanged]
-    Note over DB: ingest-place also upserts a `place` row
+    Note over DB: ingest-place also upserts a 'place' row
 
     CLI->>DB: resolve()
     loop each unresolved source_record
@@ -253,7 +253,7 @@ sequenceDiagram
         else
             DB->>DB: create new POI
         end
-        DB->>DB: propagate place_id; reconflate_and_score()
+        DB->>DB: propagate place_id and reconflate_and_score()
     end
 
     CLI->>DB: enrich()  [POIs with QID, not yet enriched]
