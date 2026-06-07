@@ -131,10 +131,32 @@ def overpass_to_drafts(element: dict, lang: str = "en") -> list[CanonicalPoiDraf
         )
     ]
 
+def wikidata_to_drafts(payload: dict, lang: str = "en") -> list[CanonicalPoiDraft]:
+    qid = payload.get("qid")
+    point = payload.get("point") or {}
+    lat, lon = point.get("lat"), point.get("lon")
+    labels = payload.get("labels") or {}
+    name = labels.get(lang) or next(iter(labels.values()), None)
+    if not name or lat is None or lon is None:
+        return []
+    descriptions = payload.get("descriptions") or {}
+    images = ([{"url": payload["image"], "source": "wikidata", "license": "varies"}]
+              if payload.get("image") else [])
+    return [CanonicalPoiDraft(
+        source="wikidata", source_id=qid, canonical_name=name,
+        lat=float(lat), lon=float(lon), names=dict(labels), wikidata_qid=qid,
+        categories=[], raw_kinds=[],
+        short_description=next(iter(descriptions.values()), None),
+        descriptions=descriptions, images=images,
+        source_xids={"wikidata": qid}, license="CC0 (Wikidata)",
+        source_url=f"https://www.wikidata.org/wiki/{qid}",
+    )]
+
 def record_to_drafts(source: str, payload: dict, lang: str | None = "en") -> list[CanonicalPoiDraft]:
-    """Dispatch a stored source_record back through the right pure mapper."""
     if source == "opentripmap":
         return opentripmap_to_drafts(payload, lang or "en")
     if source == "osm":
         return overpass_to_drafts(payload, lang or "en")
+    if source == "wikidata":
+        return wikidata_to_drafts(payload, lang or "en")
     raise ValueError(f"no mapper for source '{source}'")

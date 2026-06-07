@@ -30,6 +30,9 @@ def ingest(
         raise typer.BadParameter(f"unknown source '{source}'. try: {list(CONNECTORS)}")
     conn = CONNECTORS[source]()
 
+    if source == "opentripmap" and not __import__("traveldata.config", fromlist=["settings"]).settings.opentripmap_api_key:
+        typer.echo("warning: TRAVELDATA_OPENTRIPMAP_API_KEY is empty — OTM will return nothing", err=True)
+
     if persist:
         from .ingest import run_ingest
         c = run_ingest(conn, lat, lon, radius_m=radius_m, limit=limit or None)
@@ -88,33 +91,54 @@ def resolve(
 
 
 @app.command()
+def enrich(
+    limit: int = typer.Option(0, help="cap POIs (0 = all unenriched)"),
+    refresh: bool = typer.Option(False, help="re-enrich already-enriched POIs"),
+    pageviews: bool = typer.Option(True, "--pageviews/--no-pageviews"),
+) -> None:
+    """Enrich POIs with Wikidata content + Wikipedia pageviews, then re-score."""
+    from .enrich import run_enrich
+    s = run_enrich(limit=limit or None, with_pageviews=pageviews, refresh=refresh)
+    typer.echo(f"pois={s['pois']} wikidata_hits={s['wikidata_hits']} pageviews={s['pageviews']}")
+
+@app.command()
 def top(
     metric: str = typer.Option("activity_score",
                                help="hidden_gem_score|activity_score|content_richness|popularity"),
     limit: int = typer.Option(15),
 ) -> None:
-    """Show top POIs by a score, to eyeball results."""
-    from sqlalchemy import desc, select
+    """Show top POIs by a score, with their real contributing sources."""
+    from sqlalchemy import desc, func, select
     from ..db.base import get_sessionmaker
-    from ..db.models import Poi, PoiScore
+    from ..db.models import Poi, PoiScore, SourceRecord
 
     valid = {"hidden_gem_score", "activity_score", "content_richness", "popularity"}
     if metric not in valid:
         raise typer.BadParameter(f"metric must be one of {sorted(valid)}")
     col = getattr(PoiScore, metric)
 
+    src_agg = (select(SourceRecord.poi_id,
+                      func.array_agg(func.distinct(SourceRecord.source)).label("srcs"))
+               .group_by(SourceRecord.poi_id).subquery())
+
     Session = get_sessionmaker()
     with Session() as s:
         rows = s.execute(
-            select(Poi.canonical_name, col, Poi.categories, Poi.source_xids)
+            select(Poi.canonical_name, col, Poi.categories, src_agg.c.srcs)
             .join(PoiScore, PoiScore.poi_id == Poi.id)
-            .order_by(desc(col))
-            .limit(limit)
+            .outerjoin(src_agg, src_agg.c.poi_id == Poi.id)
+            .order_by(desc(col)).limit(limit)
         ).all()
-    for name, val, cats, xids in rows:
-        typer.echo(f"{(name or '')[:38]:38s} {metric}={val:.2f} "
-                   f"src={','.join(xids.keys())} cats={','.join(cats or [])}")
+    for name, val, cats, srcs in rows:
+        typer.echo(f"{(name or '')[:36]:36s} {metric}={(val or 0):.2f} "
+                   f"src={','.join(srcs or [])} cats={','.join(cats or [])}")
 
+@app.command()
+def serve(host: str = typer.Option("127.0.0.1"), port: int = typer.Option(8000),
+          reload: bool = typer.Option(False)) -> None:
+    """Run the FastAPI server."""
+    import uvicorn
+    uvicorn.run("traveldata.api.main:app", host=host, port=port, reload=reload)
 
 if __name__ == "__main__":
     app()

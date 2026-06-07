@@ -13,6 +13,7 @@ dependencies = [
     "tenacity>=8.2",
     "alembic>=1.13",
     "psycopg[binary]>=3.1",
+    "httpx2>=2.3.0",
 ]
 
 [project.optional-dependencies]
@@ -23,6 +24,7 @@ resolve = [
 ]
 wikivoyage = ["mwparserfromhell>=0.6"]
 dev = ["pytest>=8.0"]
+serve = ["fastapi>=0.110", "uvicorn[standard]>=0.29"]
 
 [project.scripts]
 traveldata = "traveldata.pipeline.cli:app"

@@ -55,6 +55,11 @@ class Poi(Base):
     source_xids: Mapped[dict] = mapped_column(JSONB, default=dict)
     field_provenance: Mapped[dict] = mapped_column(JSONB, default=dict)
     content_hash: Mapped[str | None] = mapped_column(String(64))
+    pageviews_30d: Mapped[int | None] = mapped_column()
+    sitelink_count: Mapped[int | None] = mapped_column()
+    wikipedia_title: Mapped[str | None] = mapped_column(Text)
+    is_destination: Mapped[bool] = mapped_column(default=True)
+    enriched_at: Mapped[datetime | None] = mapped_column()
     first_seen_at: Mapped[datetime] = mapped_column(default=func.now())
     updated_at: Mapped[datetime] = mapped_column(default=func.now(), onupdate=func.now())
 

@@ -48,27 +48,27 @@ class OpenTripMapConnector(Connector):
             self._url("radius"),
             {
                 "radius": unit.radius_m or 5000,
-                "lat": unit.lat,
-                "lon": unit.lon,
+                "lat": unit.lat, "lon": unit.lon,
                 "kinds": unit.extra.get("kinds", DEFAULT_KINDS),
                 "format": "json",
-                "limit": unit.extra.get("limit", 200),
+                "limit": unit.extra.get("limit", 500),
                 "apikey": self.apikey,
             },
         )
-        for item in listing or []:
+        if not isinstance(listing, list):   # OTM returns an error object on bad key / over quota
+            return
+        for item in listing:
             xid = item.get("xid")
             if not xid:
                 continue
-            detail = self.client.get_json(self._url(f"xid/{xid}"), {"apikey": self.apikey})
-            yield RawDoc(
-                source=self.source,
-                source_id=xid,
-                payload=detail,
-                license=self.license,
-                lang=self.lang,
-                source_url=detail.get("otm"),
-            )
+            try:
+                detail = self.client.get_json(self._url(f"xid/{xid}"), {"apikey": self.apikey})
+            except Exception:
+                continue   # skip one failed xid, keep the run alive
+            if not isinstance(detail, dict) or not detail.get("name"):
+                continue
+            yield RawDoc(source=self.source, source_id=xid, payload=detail,
+                         license=self.license, lang=self.lang, source_url=detail.get("otm"))
 
     def to_drafts(self, raw: RawDoc) -> list[CanonicalPoiDraft]:
         return mappers.opentripmap_to_drafts(raw.payload, lang=raw.lang or self.lang)

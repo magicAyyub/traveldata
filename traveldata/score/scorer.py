@@ -26,6 +26,7 @@ class PoiFeatures:
     sitelink_count: int | None = None
     otm_rate: float | None = None
     osm_present: bool = False
+    is_destination: bool = True
 
 
 @dataclass
@@ -58,12 +59,13 @@ def score(f: PoiFeatures) -> PoiScoreResult:
         )
     )
     activity = signals.activity_score(f.categories, f.in_wikivoyage_do, f.osm_leisure_sport)
-    gem = signals.hidden_gem_score(
-        richness, pop,
-        has_coordinates=f.has_coordinates,
-        source_count=f.source_count,
-        has_description=f.description_len > 0,
-        offbeat_boost=f.offbeat_boost,
+    gem = (
+        signals.hidden_gem_score(
+            richness, pop, has_coordinates=f.has_coordinates,
+            source_count=f.source_count, has_description=f.description_len > 0,
+            offbeat_boost=f.offbeat_boost,
+        )
+        if f.is_destination else 0.0
     )
     return PoiScoreResult(
         popularity=round(pop, 4),

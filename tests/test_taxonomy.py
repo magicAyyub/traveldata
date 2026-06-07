@@ -25,3 +25,13 @@ def test_activity_prior_prefers_active_categories():
     assert taxonomy.activity_prior(["hiking"]) > taxonomy.activity_prior(["monument"])
     assert taxonomy.activity_prior(["museum", "hiking"]) == taxonomy.activity_prior(["hiking"])
     assert 0.0 <= taxonomy.activity_prior([]) <= 1.0
+
+
+def test_public_art_is_not_a_destination():
+    from traveldata.normalize import taxonomy
+    assert taxonomy.map_osm_tags({"tourism": "artwork", "artwork_type": "statue"}) == ["public_art"]
+    assert taxonomy.map_osm_tags({"tourism": "gallery"}) == ["art"]
+    assert taxonomy.is_destination(["public_art"]) is False
+    assert taxonomy.is_destination(["public_art", "historic"]) is True
+    assert taxonomy.is_destination(["museum"]) is True
+    assert taxonomy.is_destination([]) is False

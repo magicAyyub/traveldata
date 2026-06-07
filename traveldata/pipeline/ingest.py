@@ -6,8 +6,7 @@ from ..db.base import get_sessionmaker
 from ..raw.store import land_raw
 
 
-def run_ingest(connector: Connector, lat: float, lon: float,
-               radius_m: int = 3000, limit: int | None = None) -> dict[str, int]:
+def run_ingest(connector, lat, lon, radius_m=3000, limit=None, commit_every=100):
     Session = get_sessionmaker()
     counts = {"new": 0, "updated": 0, "unchanged": 0, "total": 0}
     with Session() as session:
@@ -20,6 +19,8 @@ def run_ingest(connector: Connector, lat: float, lon: float,
                     _, status = land_raw(session, raw)
                     counts[status] += 1
                     counts["total"] += 1
+                    if counts["total"] % commit_every == 0:
+                        session.commit()
                     if limit and counts["total"] >= limit:
                         stop = True
                         break

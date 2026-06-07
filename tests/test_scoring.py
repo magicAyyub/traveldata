@@ -59,3 +59,14 @@ def test_scorer_end_to_end_for_offbeat_museum():
     assert s.hidden_gem_score > 0.2          # interesting but not famous
     assert s.activity_score == 0.4           # museum prior, no boosts
     assert "categories" in s.components
+
+
+def test_non_destination_poi_scores_zero_hidden_gem():
+    f = scorer.PoiFeatures(
+        categories=["historic", "monument"], has_coordinates=True,
+        description_len=200, source_count=2, lang_count=3,
+        pageviews_30d=50, is_destination=False,
+    )
+    s = scorer.score(f)
+    assert s.hidden_gem_score == 0.0
+    assert s.content_richness > 0.0
