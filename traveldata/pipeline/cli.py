@@ -31,7 +31,7 @@ def ingest(
     conn = CONNECTORS[source]()
 
     if source == "opentripmap" and not __import__("traveldata.config", fromlist=["settings"]).settings.opentripmap_api_key:
-        typer.echo("warning: TRAVELDATA_OPENTRIPMAP_API_KEY is empty — OTM will return nothing", err=True)
+        typer.echo("warning: TRAVELDATA_OPENTRIPMAP_API_KEY is empty: OTM will return nothing", err=True)
 
     if persist:
         from .ingest import run_ingest
@@ -157,7 +157,7 @@ def pipeline(
     refresh: bool = typer.Option(False, help="re-fetch Wikidata for already-enriched POIs"),
     pageviews: bool = typer.Option(True, "--pageviews/--no-pageviews"),
 ) -> None:
-    """resolve then enrich — keeps scores/flags consistent after an ingest."""
+    """resolve then enrich: keeps scores/flags consistent after an ingest."""
     from .resolve import run_resolve
     from .enrich import run_enrich
     r = run_resolve(rebuild=rebuild)

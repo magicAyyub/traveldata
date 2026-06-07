@@ -248,7 +248,7 @@ sequenceDiagram
         DB->>DB: record_to_drafts()
         alt QID match
             DB->>DB: link to existing POI
-        else spatial + name (<=80m, sim>=0.85)
+        else spatial + name match (distance under 80m, similarity 0.85+)
             DB->>DB: link to nearby POI
         else
             DB->>DB: create new POI
@@ -387,7 +387,7 @@ hidden_gem = (is_destination AND quality_floor)
 
 ```mermaid
 flowchart TD
-    A[POI] --> B{public_art in categories?\n(OSM tourism=artwork)}
+    A[POI] --> B{"public_art in categories?\n(OSM tourism=artwork)"}
     B -->|yes| X[NOT a destination]
     B -->|no| C{Wikidata P31 in\nNON_DESTINATION_INSTANCES?}
     C -->|yes| X

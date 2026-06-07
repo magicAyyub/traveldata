@@ -1,5 +1,5 @@
 """Place endpoints. highlights() is geo-scoped around the place centroid, so it surfaces
-the whole POI set in the area — not just the Wikivoyage listings."""
+the whole POI set in the area, not just the Wikivoyage listings."""
 from __future__ import annotations
 
 import uuid
